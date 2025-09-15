@@ -10,6 +10,8 @@ import { indianStates } from '../constants';
 
 import type { LorryReceipt, Customer, Vehicle, TruckRental } from '../types';
 
+import { CompanyInfo } from '../types';
+
 interface LorryReceiptFormProps {
   onSave: (lr: Partial<LorryReceipt>) => Promise<void>;
   onCancel: () => void;
@@ -19,6 +21,7 @@ interface LorryReceiptFormProps {
   onSaveCustomer: (customer: Omit<Customer, 'id' | '_id'> & { _id?: string }) => Promise<Customer>;
   lorryReceipts: LorryReceipt[];
   onSaveVehicle: (vehicle: Omit<Vehicle, 'id' | '_id'>) => Promise<Vehicle>;
+  companyInfo: CompanyInfo;
 }
 
 type LorryReceiptFormData = Omit<LorryReceipt, '_id' | 'id' | 'status' | 'consignor' | 'consignee' | 'vehicle'>;
@@ -148,8 +151,22 @@ const NewCustomerSection: React.FC<{ onCustomerAdded: (customer: Customer) => vo
     return null;
 };
 
-export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCancel, customers, vehicles, existingLr, onSaveCustomer, lorryReceipts, onSaveVehicle }) => {
+const ToggleSwitch: React.FC<{ label: string; checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean; }> = ({ label, checked, onChange, disabled }) => (
+    <label className="flex items-center cursor-pointer">
+        <div className="relative">
+            <input type="checkbox" className="sr-only" checked={checked} onChange={e => onChange(e.target.checked)} disabled={disabled} />
+            <div className={`block w-12 h-6 rounded-full transition-colors ${checked ? 'bg-indigo-600' : 'bg-gray-200'}`}></div>
+            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${checked ? 'translate-x-6' : ''}`}></div>
+        </div>
+        <div className="ml-3 text-sm font-medium text-gray-700">{label}</div>
+    </label>
+);
+
+export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCancel, customers, vehicles, existingLr, onSaveCustomer, lorryReceipts, onSaveVehicle, companyInfo }) => {
   
+  const [useCustomLr, setUseCustomLr] = useState(false);
+  const [customLrNumber, setCustomLrNumber] = useState<number | undefined>(undefined);
+
   const getInitialState = (): LorryReceiptFormData => ({
     date: getCurrentDate(),
     consignorId: '',
@@ -255,10 +272,14 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
         finalVehicleId = newVehicle._id;
       }
       
-      const lrDataToSave = {
+      const lrDataToSave: Partial<LorryReceipt> = {
         ...lr,
         vehicleId: finalVehicleId,
       };
+
+      if (useCustomLr && customLrNumber) {
+        (lrDataToSave as any).customLrNumber = customLrNumber;
+      }
 
       await onSave(lrDataToSave);
     }
@@ -280,6 +301,20 @@ export const LorryReceiptForm: React.FC<LorryReceiptFormProps> = ({ onSave, onCa
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-800">{existingLr ? `Edit Lorry Receipt #${existingLr.lrNumber}` : 'Create Lorry Receipt'}</h2>
         <div className="flex items-center space-x-2">
+            {companyInfo.allowCustomLr && !existingLr && (
+                <div className="flex items-center space-x-2">
+                    <ToggleSwitch label="Custom LR No." checked={useCustomLr} onChange={setUseCustomLr} />
+                    {useCustomLr && (
+                        <Input
+                            type="number"
+                            placeholder="Enter LR No."
+                            value={customLrNumber || ''}
+                            onChange={e => setCustomLrNumber(parseInt(e.target.value, 10))}
+                            className="w-32"
+                        />
+                    )}
+                </div>
+            )}
             <span className="font-bold text-lg">Total: ₹{(lr.totalAmount || 0).toLocaleString('en-IN')}</span>
         </div>
       </div>

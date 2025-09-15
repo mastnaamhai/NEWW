@@ -154,7 +154,7 @@ const App: React.FC = () => {
       if (lr._id) {
         await updateLorryReceipt(lr._id, lr);
       } else {
-        await createLorryReceipt(lr as Omit<LorryReceipt, '_id' | 'id'>);
+        await createLorryReceipt(lr as Omit<LorryReceipt, '_id' | 'id'>, companyInfo);
       }
       await fetchAllData(); // Refetch all data for consistency
       navigateHome();
@@ -322,26 +322,26 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (currentView.name) {
       case 'CREATE_LR':
-        return <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} />;
+        return <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} companyInfo={companyInfo} />;
       case 'EDIT_LR':
         const lrToEdit = lorryReceipts.find(lr => lr._id === currentView.id);
-        return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} /> : <div>LR not found</div>;
+        return lrToEdit ? <LorryReceiptForm onSave={saveLorryReceipt} onCancel={goBack} customers={customers} vehicles={vehicles} existingLr={lrToEdit} onSaveCustomer={saveCustomer} lorryReceipts={lorryReceipts} onSaveVehicle={saveVehicle} companyInfo={companyInfo} /> : <div>LR not found</div>;
       case 'VIEW_LR':
         const lrToView = lorryReceipts.find(lr => lr._id === currentView.id);
         return lrToView ? <LorryReceiptPDF lorryReceipt={lrToView} companyInfo={companyInfo} onBack={goBack} /> : <div>LR not found</div>;
       
       case 'CREATE_INVOICE':
         const availableLrs = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status));
-        return <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={availableLrs} customers={customers} companyInfo={companyInfo} />;
+        return <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={availableLrs} customers={customers} companyInfo={companyInfo} onSaveCustomer={saveCustomer} onSaveVehicle={saveVehicle} vehicles={vehicles} lorryReceipts={lorryReceipts} />;
       case 'CREATE_INVOICE_FROM_LR':
         const lrToInvoice = lorryReceipts.find(lr => lr._id === currentView.lrId);
         if (!lrToInvoice) return <div>LR not found</div>;
         const availableLrsForNewInvoice = lorryReceipts.filter(lr => [LorryReceiptStatus.CREATED, LorryReceiptStatus.IN_TRANSIT, LorryReceiptStatus.DELIVERED].includes(lr.status) || lr._id === currentView.lrId);
-         return <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} />;
+         return <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={availableLrsForNewInvoice} customers={customers} preselectedLr={lrToInvoice} companyInfo={companyInfo} onSaveCustomer={saveCustomer} onSaveVehicle={saveVehicle} vehicles={vehicles} lorryReceipts={lorryReceipts} />;
       case 'EDIT_INVOICE':
          const invoiceToEdit = invoices.find(inv => inv._id === currentView.id);
          const lrsForEdit = lorryReceipts.filter(lr => (lr.status !== LorryReceiptStatus.INVOICED && lr.status !== LorryReceiptStatus.PAID) || invoiceToEdit?.lorryReceipts.some(ilr => ilr._id === lr._id));
-         return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} /> : <div>Invoice not found</div>;
+         return invoiceToEdit ? <InvoiceForm onSave={saveInvoice} onCancel={goBack} availableLrs={lrsForEdit} customers={customers} existingInvoice={invoiceToEdit} companyInfo={companyInfo} onSaveCustomer={saveCustomer} onSaveVehicle={saveVehicle} vehicles={vehicles} lorryReceipts={lorryReceipts} /> : <div>Invoice not found</div>;
       case 'VIEW_INVOICE':
         const invoiceToView = invoices.find(inv => inv._id === currentView.id);
         return invoiceToView ? <InvoicePDF invoice={invoiceToView} companyInfo={companyInfo} customers={customers} onBack={goBack} /> : <div>Invoice not found</div>;
