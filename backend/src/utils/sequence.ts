@@ -1,7 +1,7 @@
 import Counter from '../models/counter';
 import LorryReceipt from '../models/lorryReceipt';
 import Invoice from '../models/invoice';
-import type { CompanyInfo } from '../../types';
+import type { CompanyInfo } from '../types';
 
 export async function getNextSequenceValue(sequenceName: string, start = 1): Promise<number> {
     const sequenceDocument = await Counter.findOneAndUpdate(
@@ -16,6 +16,10 @@ export async function getNextSequenceValue(sequenceName: string, start = 1): Pro
         { new: true }
     );
 
+    if (!updatedSequence) {
+        // This should theoretically not happen if the first call succeeds
+        throw new Error(`Counter for ${sequenceName} not found.`);
+    }
     return updatedSequence.seq;
 }
 
