@@ -1,7 +1,6 @@
 import Counter from '../models/counter';
 import LorryReceipt from '../models/lorryReceipt';
 import Invoice from '../models/invoice';
-import type { CompanyInfo } from '../types';
 
 export async function getNextSequenceValue(sequenceName: string, start = 1): Promise<number> {
     const sequenceDocument = await Counter.findOneAndUpdate(
