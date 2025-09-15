@@ -25,6 +25,17 @@ interface SettingsProps {
   onBack: () => void;
 }
 
+const ToggleSwitch: React.FC<{ label: string; checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean; }> = ({ label, checked, onChange, disabled }) => (
+    <label className="flex items-center cursor-pointer">
+        <div className="relative">
+            <input type="checkbox" className="sr-only" checked={checked} onChange={e => onChange(e.target.checked)} disabled={disabled} />
+            <div className={`block w-12 h-6 rounded-full transition-colors ${checked ? 'bg-indigo-600' : 'bg-gray-200'}`}></div>
+            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${checked ? 'translate-x-6' : ''}`}></div>
+        </div>
+        <div className="ml-3 text-sm font-medium text-gray-700">{label}</div>
+    </label>
+);
+
 const CompanyInfoForm: React.FC<{ companyInfo: CompanyInfo, onSave: (info: CompanyInfo) => void }> = ({ companyInfo, onSave }) => {
     const [info, setInfo] = useState<CompanyInfo>(companyInfo);
     const [saved, setSaved] = useState(false);
@@ -68,6 +79,54 @@ const CompanyInfoForm: React.FC<{ companyInfo: CompanyInfo, onSave: (info: Compa
                     <Input label="Bank Name" name="bankName" value={info.bankName} onChange={handleChange} />
                     <Input label="Account Number" name="accountNumber" value={info.accountNumber} onChange={handleChange} />
                     <Input label="IFSC Code" name="ifsc" value={info.ifsc} onChange={handleChange} />
+                </div>
+            </Card>
+            <div className="flex justify-end pt-4 border-t">
+                <Button type="submit">Save Settings</Button>
+            </div>
+        </form>
+    );
+};
+
+const NumberingForm: React.FC<{ companyInfo: CompanyInfo, onSave: (info: CompanyInfo) => void }> = ({ companyInfo, onSave }) => {
+    const [info, setInfo] = useState<CompanyInfo>(companyInfo);
+    const [saved, setSaved] = useState(false);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value, type } = e.target;
+        setInfo(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value, 10) : value }));
+    };
+
+    const handleToggleChange = (name: keyof CompanyInfo, checked: boolean) => {
+        setInfo(prev => ({ ...prev, [name]: checked }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave(info);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-gray-800">Numbering Settings</h3>
+                {saved && <span className="text-green-600 bg-green-100 px-3 py-1 rounded-md text-sm font-medium">Saved!</span>}
+            </div>
+            <Card title="Lorry Receipt (LR) Numbers">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input label="LR Number Start" name="lrNumberStart" type="number" value={info.lrNumberStart || ''} onChange={handleChange} />
+                    <Input label="LR Number End" name="lrNumberEnd" type="number" value={info.lrNumberEnd || ''} onChange={handleChange} />
+                </div>
+                <div className="mt-4">
+                    <ToggleSwitch label="Allow Custom LR Numbers" checked={info.allowCustomLr || false} onChange={checked => handleToggleChange('allowCustomLr', checked)} />
+                </div>
+            </Card>
+            <Card title="Invoice Numbers">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input label="Invoice Number Start" name="invoiceNumberStart" type="number" value={info.invoiceNumberStart || ''} onChange={handleChange} />
+                    <Input label="Invoice Number End" name="invoiceNumberEnd" type="number" value={info.invoiceNumberEnd || ''} onChange={handleChange} />
                 </div>
             </Card>
             <div className="flex justify-end pt-4 border-t">
@@ -263,6 +322,7 @@ export const Settings: React.FC<SettingsProps> = (props) => {
 
   const tabs = [
       { key: 'info', label: 'Company Info' },
+      { key: 'numbering', label: 'Numbering' },
       { key: 'export', label: 'Backup & Export' },
       { key: 'security', label: 'Security' },
       { key: 'data', label: 'Data Management' },
@@ -289,6 +349,7 @@ export const Settings: React.FC<SettingsProps> = (props) => {
         </div>
         <div className="pt-8">
             {activeTab === 'info' && <CompanyInfoForm companyInfo={props.companyInfo} onSave={props.onSave} />}
+            {activeTab === 'numbering' && <NumberingForm companyInfo={props.companyInfo} onSave={props.onSave} />}
             {activeTab === 'export' && <BackupExport lorryReceipts={props.lorryReceipts} invoices={props.invoices} truckHiringNotes={props.truckHiringNotes} />}
             {activeTab === 'security' && <ChangePasswordForm onPasswordChange={props.onPasswordChange} />}
             {activeTab === 'data' && <DataManagement onResetData={props.onResetData} onBackup={props.onBackup} onRestore={props.onRestore} />}

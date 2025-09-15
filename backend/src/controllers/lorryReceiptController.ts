@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import LorryReceipt from '../models/lorryReceipt';
-import { getNextSequenceValue } from '../utils/sequence';
+import { getLrNumber } from '../utils/sequence';
 
 export const getLorryReceipts = async (req: Request, res: Response) => {
   try {
@@ -8,7 +8,7 @@ export const getLorryReceipts = async (req: Request, res: Response) => {
       .populate('consignor')
       .populate('consignee')
       .populate('vehicle')
-      .sort({ lrNumber: -1 }); // Sort by the new sequential ID
+      .sort({ lrNumber: -1 });
     res.json(lorryReceipts);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -31,10 +31,10 @@ export const getLorryReceiptById = async (req: Request, res: Response) => {
 };
 
 export const createLorryReceipt = async (req: Request, res: Response) => {
-  const { consignorId, consigneeId, vehicleId, ...rest } = req.body;
+  const { consignorId, consigneeId, vehicleId, customLrNumber, companyInfo, ...rest } = req.body;
 
   try {
-    const nextLrNumber = await getNextSequenceValue('lorryReceiptId');
+    const nextLrNumber = await getLrNumber(customLrNumber, companyInfo);
     const lorryReceipt = new LorryReceipt({
       ...rest,
       lrNumber: nextLrNumber,

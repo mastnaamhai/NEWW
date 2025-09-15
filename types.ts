@@ -141,6 +141,12 @@ export interface CompanyInfo {
     bankName: string;
     accountNumber: string;
     ifsc: string;
+    // New fields for number ranges
+    lrNumberStart?: number;
+    lrNumberEnd?: number;
+    invoiceNumberStart?: number;
+    invoiceNumberEnd?: number;
+    allowCustomLr?: boolean;
 }
 
 export interface Payment {
