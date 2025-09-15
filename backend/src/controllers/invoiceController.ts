@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import Invoice from '../models/invoice';
-import { getNextSequenceValue } from '../utils/sequence';
+import { getInvoiceNumber } from '../utils/sequence';
 import { InvoiceStatus } from '../types';
 
 export const getInvoices = async (req: Request, res: Response) => {
@@ -46,10 +46,10 @@ export const getInvoiceById = async (req: Request, res: Response) => {
 };
 
 export const createInvoice = async (req: Request, res: Response) => {
-  const { customerId, lorryReceipts, ...rest } = req.body;
+  const { customerId, lorryReceipts, customInvoiceNumber, companyInfo, ...rest } = req.body;
 
   try {
-    const nextInvoiceNumber = await getNextSequenceValue('invoiceId');
+    const nextInvoiceNumber = await getInvoiceNumber(customInvoiceNumber, companyInfo);
     const invoice = new Invoice({
       ...rest,
       invoiceNumber: nextInvoiceNumber,

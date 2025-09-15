@@ -10,13 +10,15 @@ export const getLorryReceipts = async (): Promise<LorryReceipt[]> => {
     return response.json();
 };
 
-export const createLorryReceipt = async (lorryReceipt: Omit<LorryReceipt, 'id' | '_id'>): Promise<LorryReceipt> => {
+import { CompanyInfo } from '../types';
+
+export const createLorryReceipt = async (lorryReceipt: Omit<LorryReceipt, 'id' | '_id'>, companyInfo: CompanyInfo): Promise<LorryReceipt> => {
     const response = await fetch(`${API_BASE_URL}/lorryreceipts`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(lorryReceipt),
+        body: JSON.stringify({ ...lorryReceipt, companyInfo }),
     });
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));

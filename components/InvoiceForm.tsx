@@ -16,6 +16,10 @@ interface InvoiceFormProps {
   companyInfo: CompanyInfo;
   existingInvoice?: Invoice;
   preselectedLr?: LorryReceipt;
+  onSaveCustomer: (customer: Omit<Customer, 'id' | '_id'> & { _id?: string }) => Promise<Customer>;
+  onSaveVehicle: (vehicle: Omit<Vehicle, 'id' | '_id'>) => Promise<Vehicle>;
+  vehicles: Vehicle[];
+  lorryReceipts: LorryReceipt[];
 }
 
 const ToggleSwitch: React.FC<{ label: string; checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean; }> = ({ label, checked, onChange, disabled }) => (
@@ -29,7 +33,12 @@ const ToggleSwitch: React.FC<{ label: string; checked: boolean; onChange: (check
     </label>
 );
 
-export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, availableLrs, customers, companyInfo, existingInvoice, preselectedLr }) => {
+import { LorryReceiptForm } from './LorryReceiptForm';
+import { API_BASE_URL } from '../constants';
+
+export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, availableLrs, customers, companyInfo, existingInvoice, preselectedLr, onSaveCustomer, onSaveVehicle, vehicles, lorryReceipts }) => {
+
+  const [isLrModalOpen, setIsLrModalOpen] = useState(false);
 
   const [invoice, setInvoice] = useState<Partial<Invoice>>(
     existingInvoice
@@ -56,6 +65,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
   const [selectedLrs, setSelectedLrs] = useState<Set<string>>(
     new Set(existingInvoice?.lorryReceipts.map(lr => lr._id) || [])
   );
+
+  const handleLrCreated = (newLr: LorryReceipt) => {
+    setIsLrModalOpen(false);
+    setSelectedLrs(prev => new Set(prev).add(newLr._id));
+  };
   
   // Auto-set GST type based on client and company state
   useEffect(() => {
@@ -192,7 +206,42 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, avai
         {customer && <p className="text-sm text-gray-500 mt-2">Client State: <span className="font-medium text-gray-700">{customer.state}</span></p>}
       </Card>
 
-      <Card title="Select Lorry Receipts for Invoice">
+      <Card title={
+        <div className="flex justify-between items-center">
+          <span>Select Lorry Receipts for Invoice</span>
+          <Button type="button" variant="secondary" onClick={() => setIsLrModalOpen(true)}>Create New LR</Button>
+        </div>
+      }>
+        {isLrModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+            <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <LorryReceiptForm
+                onSave={async (lr) => {
+                  // This is a simplified save for the modal context.
+                  // It doesn't navigate away, just creates the LR and calls back.
+                  const response = await fetch(`${API_BASE_URL}/lorryreceipts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...lr, companyInfo }),
+                  });
+                  const newLr = await response.json();
+                  if (response.ok) {
+                    handleLrCreated(newLr);
+                  } else {
+                    alert(`Error creating LR: ${newLr.message}`);
+                  }
+                }}
+                onCancel={() => setIsLrModalOpen(false)}
+                customers={customers}
+                vehicles={vehicles}
+                onSaveCustomer={onSaveCustomer}
+                lorryReceipts={lorryReceipts}
+                onSaveVehicle={onSaveVehicle}
+                companyInfo={companyInfo}
+              />
+            </div>
+          </div>
+        )}
         <div className="max-h-64 overflow-y-auto border rounded-md">
           {invoice.customerId === '' ? (
             <p className="text-gray-500 text-center p-4">Please select a client to see available Lorry Receipts.</p>
